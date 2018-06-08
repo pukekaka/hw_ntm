@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default="train")
+    # parser.add_argument('--mode', default="test")
     parser.add_argument('--restore_training', default=False)
     parser.add_argument('--test_seq_length', type=int, default=20)
     parser.add_argument('--model', default="NTM")
@@ -20,9 +21,10 @@ def main():
     parser.add_argument('--batch_size', default=10)
     parser.add_argument('--vector_dim', default=8)
     parser.add_argument('--shift_range', default=1)
-    parser.add_argument('--num_epoches', default=1000000)
+    parser.add_argument('--num_epoches', default=50000)
     parser.add_argument('--learning_rate', default=1e-4)
     parser.add_argument('--save_dir', default='./save/copy_task')
+    # parser.add_argument('--save_dir', default='./save/copy_task/NTM')
     parser.add_argument('--tensorboard_dir', default='./summary/copy_task')
     args = parser.parse_args()
     if args.mode == 'train':
@@ -35,7 +37,6 @@ def train(args):
     model_list = [NTMCopyModel(args, 1)]
     for seq_length in range(2, args.max_seq_length + 1):
         model_list.append(NTMCopyModel(args, seq_length, reuse=True))
-    # model = NTM_model(args, args.max_seq_length)
     with tf.Session() as sess:
         if args.restore_training:
             saver = tf.train.Saver()
@@ -50,12 +51,10 @@ def train(args):
         for b in range(args.num_epoches):
             seq_length = np.random.randint(1, args.max_seq_length + 1)
             model = model_list[seq_length - 1]
-            # seq_length = args.max_seq_length
             x = generate_random_strings(args.batch_size, seq_length, args.vector_dim)
             feed_dict = {model.x: x}
-            # print(sess.run([model.state_list, model.output_list], feed_dict=feed_dict))
-            if b % 100 == 0:        # test
-                p = 0               # select p th sample in the batch to show
+            if b % 100 == 0:
+                p = 0
                 print(x[p, :, :])
                 print(sess.run(model.o, feed_dict=feed_dict)[p, :, :])
                 state_list = sess.run(model.state_list, feed_dict=feed_dict)
@@ -71,7 +70,7 @@ def train(args):
                 merged_summary = sess.run(model.copy_loss_summary, feed_dict=feed_dict)
                 train_writer.add_summary(merged_summary, b)
                 print('batches %d, loss %g' % (b, copy_loss))
-            else:                   # train
+            else:
                 sess.run(model.train_op, feed_dict=feed_dict)
             if b % 5000 == 0 and b > 0:
                 saver.save(sess, args.save_dir + '/' + args.model + '/model.tfmodel', global_step=b)

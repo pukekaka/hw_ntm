@@ -2,9 +2,6 @@ import numpy as np
 import os
 from PIL import Image
 from PIL import ImageOps
-# from skimage import io
-# from skimage import transform
-# from skimage import util
 
 
 def generate_random_strings(batch_size, seq_length, vector_dim):
@@ -42,12 +39,6 @@ class OmniglotDataLoader:
         for dirname, subdirname, filelist in os.walk(data_dir):
             if filelist:
                 self.data.append(
-                    # [np.reshape(
-                    #     np.array(Image.open(dirname + '/' + filename).resize(image_size), dtype=np.float32),
-                    #     newshape=(image_size[0] * image_size[1])
-                    #     )
-                    #     for filename in filelist]
-                    # [io.imread(dirname + '/' + filename).astype(np.float32) / 255 for filename in filelist]
                     [Image.open(dirname + '/' + filename).copy() for filename in filelist]
                 )
 
@@ -64,9 +55,9 @@ class OmniglotDataLoader:
         elif type == 'test':
             data = self.test_data
         classes = [np.random.choice(range(len(data)), replace=False, size=n_classes) for _ in range(batch_size)]
-        if sample_strategy == 'random':         # #(sample) per class may not be equal (sec 7)
+        if sample_strategy == 'random':
             seq = np.random.randint(0, n_classes, [batch_size, seq_length])
-        elif sample_strategy == 'uniform':      # #(sample) per class are equal
+        elif sample_strategy == 'uniform':
             seq = np.array([np.concatenate([[j] * int(seq_length / n_classes) for j in range(n_classes)])
                    for i in range(batch_size)])
             for i in range(batch_size):
@@ -111,16 +102,4 @@ class OmniglotDataLoader:
         if max_value > 0.:
             np_image = np_image / max_value
         return np_image
-        # mat = transform.AffineTransform(translation=np.random.randint(-10, 11, size=2).tolist())
-        # return np.reshape(
-        #     util.invert(
-        #         transform.resize(
-        #             transform.warp(
-        #                 transform.rotate(
-        #                     util.invert(image),
-        #                     angle=rand_rotate + np.random.rand() * 22.5 - 11.25
-        #                 ), mat
-        #             ), output_shape=self.image_size
-        #         )
-        #     ), newshape=(self.image_size[0] * self.image_size[1])
-        # )
+
